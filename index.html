@@ -38,14 +38,14 @@
     .subtitle { color: var(--muted); text-align: center; font-size: 1rem; margin-bottom: 2.5rem; line-height: 1.6; }
     .card {
       background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
-      padding: 2rem; width: 100%; max-width: 600px; box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+      padding: 2.5rem; width: 100%; max-width: 800px; box-shadow: 0 20px 60px rgba(0,0,0,0.4);
     }
     #creator label { display: block; font-size: 0.85rem; font-weight: 600; color: var(--muted);
       text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 0.6rem; }
     #creator input[type="text"] {
-      width: 100%; padding: 1rem 1.2rem; background: #1e2235;
+      width: 100%; padding: 1.2rem 1.5rem; background: #1e2235;
       border: 1.5px solid var(--border); border-radius: 12px; color: var(--text);
-      font-size: 1.05rem; font-family: 'Inter', sans-serif; outline: none;
+      font-size: 1.2rem; font-family: 'Inter', sans-serif; outline: none;
       transition: border-color 0.25s, box-shadow 0.25s;
     }
     #creator input[type="text"]:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(79,138,255,0.15); }
@@ -86,9 +86,9 @@
     .result-desc { font-size: 0.8rem; color: var(--muted); margin-bottom: 0.8rem; line-height: 1.5; }
     .link-row { display: flex; align-items: center; gap: 0.7rem; }
     .link-display {
-      flex: 1; font-size: 0.8rem; word-break: break-all; font-family: monospace;
-      background: #111520; padding: 0.55rem 0.8rem; border-radius: 8px;
-      border: 1px solid var(--border); max-height: 3.5rem; overflow-y: auto;
+      flex: 1; font-size: 0.95rem; word-break: break-all; font-family: monospace;
+      background: #111520; padding: 0.75rem 1rem; border-radius: 8px;
+      border: 1px solid var(--border); max-height: 5rem; overflow-y: auto;
     }
     .result-block.classic .link-display { color: var(--accent); }
     .result-block.selfcontained .link-display { color: var(--accent2); }
@@ -427,13 +427,13 @@
     for (let i = 0; i < DISPLAY.length; i++) {
       const ch = DISPLAY[i], typo = maybeTypo(ch);
       if (typo) {
-        typed += typo; searchInp.value = typed;
+        typed += typo; searchInp.value = typed; searchInp.scrollLeft = searchInp.scrollWidth;
         await sleep(SPEED * (0.8 + Math.random() * 0.4));
         await sleep(SPEED * (1.5 + Math.random()));
-        typed = typed.slice(0, -1); searchInp.value = typed;
+        typed = typed.slice(0, -1); searchInp.value = typed; searchInp.scrollLeft = searchInp.scrollWidth;
         await sleep(SPEED * (0.6 + Math.random() * 0.4));
       }
-      typed += ch; searchInp.value = typed;
+      typed += ch; searchInp.value = typed; searchInp.scrollLeft = searchInp.scrollWidth;
       await sleep(SPEED * (0.7 + Math.random() * 0.6));
     }
 
