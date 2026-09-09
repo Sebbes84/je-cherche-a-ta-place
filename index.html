@@ -414,8 +414,8 @@
     // ── Animation ──
     await sleep(600);
 
-    const rect = searchBar.getBoundingClientRect();
-    await moveTo(rect.left + rect.width * 0.4, rect.top + rect.height / 2, 900);
+    const rect = searchInp.getBoundingClientRect();
+    await moveTo(rect.left + rect.width / 2, rect.top + rect.height / 2, 900);
     await sleep(200);
 
     searchBar.classList.add('focused');
