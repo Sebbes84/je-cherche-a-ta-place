@@ -186,41 +186,30 @@
             <option value="2">Importantes</option>
           </select>
         </div>
+        <div class="option-group">
+          <label for="shorten">Lien</label>
+          <select id="shorten">
+            <option value="0">Direct</option>
+            <option value="1" selected>Raccourci</option>
+          </select>
+        </div>
       </div>
 
-      <button class="btn-generate" onclick="generateLinks()">✨ Générer les liens</button>
+      <button class="btn-generate" onclick="generateLinks()">✨ Générer le lien</button>
 
       <div class="results" id="results">
-        <!-- Lien classique -->
-        <div class="result-block classic">
-          <div class="result-header">
-            <span class="result-title">🔗 Lien classique</span>
-            <span class="result-badge badge-classic">Court — 1 seul fichier</span>
+          <div class="result-block classic">
+            <div class="link-row">
+              <div class="link-display" id="linkClassic"></div>
+              <button class="btn-action btn-classic" id="btnCopyClassic" onclick="copyLink()">Copier</button>
+            </div>
+            <div class="row-btns">
+              <a class="btn-open o-classic" id="btnOpenClassic" target="_blank">↗ Ouvrir dans un onglet</a>
+            </div>
           </div>
-          <p class="result-desc">Ce fichier suffit ! Partage-le une fois (OneDrive, email…) et génère autant de liens courts que tu veux.</p>
-          <div class="link-row">
-            <div class="link-display" id="linkClassic"></div>
-            <button class="btn-action btn-classic" id="btnCopyClassic" onclick="copyLink('classic')">Copier</button>
-          </div>
-          <div class="row-btns">
-            <a class="btn-open o-classic" id="btnOpenClassic" target="_blank">↗ Ouvrir dans un onglet</a>
-          </div>
-        </div>
-
-        <!-- Lien auto-contenu via nouvelle fenêtre -->
-        <div class="result-block selfcontained">
-          <div class="result-header">
-            <span class="result-title">✨ Aperçu instantané</span>
-            <span class="result-badge badge-self">Sans fichier externe</span>
-          </div>
-          <p class="result-desc">Ouvre la simulation directement dans un nouvel onglet — idéal pour tester. Ce lien ne se partage pas, utilise le lien classique pour ça.</p>
-          <div class="row-btns">
-            <button class="btn-open o-self" onclick="openPreview()">🚀 Ouvrir l'aperçu</button>
-          </div>
-        </div>
       </div>
     </div>
-    <p class="footer">Partage le fichier une fois — puis génère autant de liens courts que tu veux 🎩</p>
+    <p class="footer">Génère un lien — partage-le à qui tu veux 🎩</p>
   </div>
 
   <!-- ══════════════════════════════════════════════════════════
@@ -294,34 +283,63 @@
   // ══════════════════════════════════════════════════════════════════
   let urlClassic = '', simParams = null;
 
-  function generateLinks() {
+  async function generateLinks() {
     const query = document.getElementById('query').value.trim();
     if (!query) {
       const inp = document.getElementById('query');
       inp.focus(); inp.style.borderColor = '#ff6b6b';
       setTimeout(() => inp.style.borderColor = '', 1000); return;
     }
-    const speed  = parseInt(document.getElementById('speed').value);
-    const typos  = parseInt(document.getElementById('typos').value);
-    const fautes = parseInt(document.getElementById('fautes').value);
+    const speed   = parseInt(document.getElementById('speed').value);
+    const typos   = parseInt(document.getElementById('typos').value);
+    const fautes  = parseInt(document.getElementById('fautes').value);
+    const shorten = parseInt(document.getElementById('shorten').value);
     simParams = { query, speed, typos, fautes };
 
-    // Lien GitHub Pages (toujours l'URL publique)
     const GITHUB_BASE = 'https://sebbes84.github.io/je-cherche-a-ta-place/';
     const p = new URLSearchParams({ q: query, speed, typos, fautes });
-    urlClassic = GITHUB_BASE + '?' + p.toString();
+    const longUrl = GITHUB_BASE + '?' + p.toString();
+    urlClassic = longUrl;
 
-    document.getElementById('linkClassic').textContent = urlClassic;
-    document.getElementById('btnOpenClassic').href = urlClassic;
-
+    const linkDisplay = document.getElementById('linkClassic');
+    const btnOpen     = document.getElementById('btnOpenClassic');
+    const btnCopy     = document.getElementById('btnCopyClassic');
+    btnOpen.href = longUrl;
+    btnCopy.disabled = true;
     document.getElementById('results').style.display = 'block';
-    const btn = document.getElementById('btnCopyClassic');
-    btn.textContent = 'Copier'; btn.classList.remove('copied');
+
+    if (shorten === 1) {
+      // file:// bloque les requêtes réseau → expliquer à l'utilisateur
+      if (window.location.protocol === 'file:') {
+        linkDisplay.innerHTML = '<span style="color:var(--warn)">⚠️ Raccourcissement impossible en local — ouvre cette page depuis GitHub Pages pour activer cette option.</span>';
+        linkDisplay.style.color = 'inherit';
+        urlClassic = longUrl;
+      } else {
+        linkDisplay.textContent = '⏳ Raccourcissement…';
+        try {
+          const res  = await fetch('https://is.gd/create.php?format=json&url=' + encodeURIComponent(longUrl));
+          const data = await res.json();
+          if (data.shorturl) {
+            urlClassic = data.shorturl;
+            linkDisplay.textContent = data.shorturl;
+            btnOpen.href = data.shorturl;
+          } else {
+            linkDisplay.textContent = longUrl;
+          }
+        } catch (e) {
+          linkDisplay.textContent = longUrl;
+        }
+      }
+    } else {
+      linkDisplay.textContent = longUrl;
+    }
+
+    btnCopy.disabled = false;
+    btnCopy.textContent = 'Copier'; btnCopy.classList.remove('copied');
   }
 
-  function copyLink(type) {
-    const url = urlClassic;
-    navigator.clipboard.writeText(url).then(() => {
+  function copyLink() {
+    navigator.clipboard.writeText(urlClassic).then(() => {
       const btn = document.getElementById('btnCopyClassic');
       btn.textContent = '✓ Copié !'; btn.classList.add('copied');
       setTimeout(() => { btn.textContent = 'Copier'; btn.classList.remove('copied'); }, 2500);
