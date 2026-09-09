@@ -310,46 +310,43 @@
 
     if (shorten === 1) {
       if (window.location.protocol === 'file:') {
-        linkDisplay.innerHTML = '<span style="color:var(--warn)">⚠️ Raccourcissement impossible en local — utilise la version GitHub Pages.</span>';
+        linkDisplay.innerHTML = '<span style="color:var(--warn)">⚠️ Raccourcissement impossible en local.</span>';
         urlClassic = longUrl;
       } else {
         linkDisplay.textContent = '⏳ Raccourcissement…';
 
-        async function fetchWithTimeout(url, ms = 6000) {
-          const ctrl = new AbortController();
-          const id = setTimeout(() => ctrl.abort(), ms);
-          try { const r = await fetch(url, { signal: ctrl.signal }); clearTimeout(id); return r; }
-          catch(e) { clearTimeout(id); throw e; }
-        }
+        const isgdApi = 'https://is.gd/create.php?format=simple&url=' + encodeURIComponent(longUrl);
 
-        async function shortenWith(apiUrl) {
-          const proxy = 'https://corsproxy.io/?' + encodeURIComponent(apiUrl);
-          const r = await fetchWithTimeout(proxy, 6000);
-          const t = await r.text();
-          return t.startsWith('https://') ? t.trim() : null;
-        }
+        // Tentative directe + 3 proxies CORS en parallèle — le plus rapide gagne
+        const attempts = [
+          // Direct (is.gd supporte CORS en théorie)
+          fetch(isgdApi).then(r => r.text()),
+          // allorigins.win
+          fetch('https://api.allorigins.win/raw?url=' + encodeURIComponent(isgdApi)).then(r => r.text()),
+          // corsproxy.io
+          fetch('https://corsproxy.io/?' + encodeURIComponent(isgdApi)).then(r => r.text()),
+          // proxy.cors.sh
+          fetch('https://proxy.cors.sh/' + isgdApi, { headers: { 'x-cors-api-key': 'temp_demo' } }).then(r => r.text()),
+        ].map(p => p.then(t => {
+          if (t && t.trim().startsWith('https://is.gd/')) return t.trim();
+          throw new Error('invalid');
+        }));
 
-        let shortened = null;
-
-        // Tentative 1 : is.gd (redirection directe, pas de preview)
         try {
-          shortened = await shortenWith('https://is.gd/create.php?format=simple&url=' + encodeURIComponent(longUrl));
-        } catch(_) {}
-
-        // Tentative 2 : v.gd (même backend que is.gd)
-        if (!shortened) {
-          try {
-            shortened = await shortenWith('https://v.gd/create.php?format=simple&url=' + encodeURIComponent(longUrl));
-          } catch(_) {}
+          const short = await Promise.any(attempts);
+          urlClassic = short;
+          linkDisplay.textContent = short;
+          btnOpen.href = short;
+        } catch(_) {
+          // Tous ont échoué
+          urlClassic = longUrl;
+          linkDisplay.textContent = longUrl;
         }
-
-        urlClassic = shortened || longUrl;
-        linkDisplay.textContent = urlClassic;
-        btnOpen.href = urlClassic;
       }
     } else {
       linkDisplay.textContent = longUrl;
     }
+
 
 
 
