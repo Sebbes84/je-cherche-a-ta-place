@@ -204,7 +204,8 @@
               <button class="btn-action btn-classic" id="btnCopyClassic" onclick="copyLink()">Copier</button>
             </div>
             <div class="row-btns">
-              <a class="btn-open o-classic" id="btnOpenClassic" target="_blank">↗ Ouvrir dans un onglet</a>
+              <a class="btn-open o-classic" id="btnOpenClassic" target="_blank">↗ Ouvrir</a>
+              <a class="btn-open o-self" id="btnIsgd" target="_blank" style="display:none">🔗 Raccourcir sur is.gd</a>
             </div>
           </div>
       </div>
@@ -308,48 +309,18 @@
     btnCopy.disabled = true;
     document.getElementById('results').style.display = 'block';
 
+    // Affichage du lien
+    linkDisplay.textContent = longUrl;
+    urlClassic = longUrl;
+
+    // Bouton is.gd : visible uniquement si Raccourci sélectionné
+    const btnIsgd = document.getElementById('btnIsgd');
     if (shorten === 1) {
-      if (window.location.protocol === 'file:') {
-        linkDisplay.innerHTML = '<span style="color:var(--warn)">⚠️ Raccourcissement impossible en local.</span>';
-        urlClassic = longUrl;
-      } else {
-        linkDisplay.textContent = '⏳ Raccourcissement…';
-
-        const isgdApi = 'https://is.gd/create.php?format=simple&url=' + encodeURIComponent(longUrl);
-
-        // Tentative directe + 3 proxies CORS en parallèle — le plus rapide gagne
-        const attempts = [
-          // Direct (is.gd supporte CORS en théorie)
-          fetch(isgdApi).then(r => r.text()),
-          // allorigins.win
-          fetch('https://api.allorigins.win/raw?url=' + encodeURIComponent(isgdApi)).then(r => r.text()),
-          // corsproxy.io
-          fetch('https://corsproxy.io/?' + encodeURIComponent(isgdApi)).then(r => r.text()),
-          // proxy.cors.sh
-          fetch('https://proxy.cors.sh/' + isgdApi, { headers: { 'x-cors-api-key': 'temp_demo' } }).then(r => r.text()),
-        ].map(p => p.then(t => {
-          if (t && t.trim().startsWith('https://is.gd/')) return t.trim();
-          throw new Error('invalid');
-        }));
-
-        try {
-          const short = await Promise.any(attempts);
-          urlClassic = short;
-          linkDisplay.textContent = short;
-          btnOpen.href = short;
-        } catch(_) {
-          // Tous ont échoué
-          urlClassic = longUrl;
-          linkDisplay.textContent = longUrl;
-        }
-      }
+      btnIsgd.href = 'https://is.gd/create.php?url=' + encodeURIComponent(longUrl);
+      btnIsgd.style.display = 'block';
     } else {
-      linkDisplay.textContent = longUrl;
+      btnIsgd.style.display = 'none';
     }
-
-
-
-
 
     btnCopy.disabled = false;
     btnCopy.textContent = 'Copier'; btnCopy.classList.remove('copied');
