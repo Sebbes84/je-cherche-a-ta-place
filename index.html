@@ -314,37 +314,44 @@
         urlClassic = longUrl;
       } else {
         linkDisplay.textContent = '⏳ Raccourcissement…';
+
+        async function fetchWithTimeout(url, ms = 6000) {
+          const ctrl = new AbortController();
+          const id = setTimeout(() => ctrl.abort(), ms);
+          try { const r = await fetch(url, { signal: ctrl.signal }); clearTimeout(id); return r; }
+          catch(e) { clearTimeout(id); throw e; }
+        }
+
+        async function shortenWith(apiUrl) {
+          const proxy = 'https://corsproxy.io/?' + encodeURIComponent(apiUrl);
+          const r = await fetchWithTimeout(proxy, 6000);
+          const t = await r.text();
+          return t.startsWith('https://') ? t.trim() : null;
+        }
+
         let shortened = null;
 
-        // Tentative 1 : TinyURL
+        // Tentative 1 : is.gd (redirection directe, pas de preview)
         try {
-          const r = await fetch('https://tinyurl.com/api-create.php?url=' + encodeURIComponent(longUrl));
-          const t = await r.text();
-          if (t.startsWith('https://')) shortened = t.trim();
-        } catch (_) {}
+          shortened = await shortenWith('https://is.gd/create.php?format=simple&url=' + encodeURIComponent(longUrl));
+        } catch(_) {}
 
-        // Tentative 2 : is.gd (fallback)
+        // Tentative 2 : v.gd (même backend que is.gd)
         if (!shortened) {
           try {
-            const r = await fetch('https://is.gd/create.php?format=simple&url=' + encodeURIComponent(longUrl));
-            const t = await r.text();
-            if (t.startsWith('https://')) shortened = t.trim();
-          } catch (_) {}
+            shortened = await shortenWith('https://v.gd/create.php?format=simple&url=' + encodeURIComponent(longUrl));
+          } catch(_) {}
         }
 
-        if (shortened) {
-          urlClassic = shortened;
-          linkDisplay.textContent = shortened;
-          btnOpen.href = shortened;
-        } else {
-          // Les deux ont échoué → lien long
-          urlClassic = longUrl;
-          linkDisplay.textContent = longUrl;
-        }
+        urlClassic = shortened || longUrl;
+        linkDisplay.textContent = urlClassic;
+        btnOpen.href = urlClassic;
       }
     } else {
       linkDisplay.textContent = longUrl;
     }
+
+
 
 
     btnCopy.disabled = false;
