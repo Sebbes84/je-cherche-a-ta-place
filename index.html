@@ -205,7 +205,7 @@
             </div>
             <div class="row-btns">
               <a class="btn-open o-classic" id="btnOpenClassic" target="_blank">↗ Ouvrir</a>
-              <a class="btn-open o-self" id="btnIsgd" target="_blank" style="display:none">🔗 Raccourcir sur is.gd</a>
+              <a class="btn-open o-self" id="btnIsgd" target="_blank" style="display:none">🔗 Raccourcir sur TinyURL</a>
             </div>
           </div>
       </div>
@@ -313,10 +313,12 @@
     linkDisplay.textContent = longUrl;
     urlClassic = longUrl;
 
-    // Bouton is.gd : visible uniquement si Raccourci sélectionné
+    // Bouton TinyURL : visible uniquement si Raccourci sélectionné
     const btnIsgd = document.getElementById('btnIsgd');
     if (shorten === 1) {
-      btnIsgd.href = 'https://is.gd/create.php?url=' + encodeURIComponent(longUrl);
+      // tinyurl.com/create.php accepte une URL en paramètre et la pré-remplit
+      const cleanUrl = longUrl.replace(/\+/g, '%20');
+      btnIsgd.href = 'https://tinyurl.com/create.php?url=' + encodeURIComponent(cleanUrl);
       btnIsgd.style.display = 'block';
     } else {
       btnIsgd.style.display = 'none';
