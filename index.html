@@ -309,30 +309,43 @@
     document.getElementById('results').style.display = 'block';
 
     if (shorten === 1) {
-      // file:// bloque les requêtes réseau → expliquer à l'utilisateur
       if (window.location.protocol === 'file:') {
-        linkDisplay.innerHTML = '<span style="color:var(--warn)">⚠️ Raccourcissement impossible en local — ouvre cette page depuis GitHub Pages pour activer cette option.</span>';
-        linkDisplay.style.color = 'inherit';
+        linkDisplay.innerHTML = '<span style="color:var(--warn)">⚠️ Raccourcissement impossible en local — utilise la version GitHub Pages.</span>';
         urlClassic = longUrl;
       } else {
         linkDisplay.textContent = '⏳ Raccourcissement…';
+        let shortened = null;
+
+        // Tentative 1 : TinyURL
         try {
-          const res  = await fetch('https://is.gd/create.php?format=json&url=' + encodeURIComponent(longUrl));
-          const data = await res.json();
-          if (data.shorturl) {
-            urlClassic = data.shorturl;
-            linkDisplay.textContent = data.shorturl;
-            btnOpen.href = data.shorturl;
-          } else {
-            linkDisplay.textContent = longUrl;
-          }
-        } catch (e) {
+          const r = await fetch('https://tinyurl.com/api-create.php?url=' + encodeURIComponent(longUrl));
+          const t = await r.text();
+          if (t.startsWith('https://')) shortened = t.trim();
+        } catch (_) {}
+
+        // Tentative 2 : is.gd (fallback)
+        if (!shortened) {
+          try {
+            const r = await fetch('https://is.gd/create.php?format=simple&url=' + encodeURIComponent(longUrl));
+            const t = await r.text();
+            if (t.startsWith('https://')) shortened = t.trim();
+          } catch (_) {}
+        }
+
+        if (shortened) {
+          urlClassic = shortened;
+          linkDisplay.textContent = shortened;
+          btnOpen.href = shortened;
+        } else {
+          // Les deux ont échoué → lien long
+          urlClassic = longUrl;
           linkDisplay.textContent = longUrl;
         }
       }
     } else {
       linkDisplay.textContent = longUrl;
     }
+
 
     btnCopy.disabled = false;
     btnCopy.textContent = 'Copier'; btnCopy.classList.remove('copied');
